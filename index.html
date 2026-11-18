@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minhas Claims - Photocard Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+--primary: #ff6584;
+--primary-light: #ff8da1;
+--bg-gradient: linear-gradient(135deg, #fff0f3 0%, #f3e7ff 100%);
+--card-bg: #ffffff;
+--text-main: #4a4a4a;
+--text-muted: #888888;
+}
+
+* {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+font-family: 'Poppins', sans-serif;
+}
+
+body {
+background: var(--bg-gradient);
+min-height: 100vh;
+color: var(--text-main);
+padding: 20px;
+display: flex;
+flex-direction: column;
+align-items: center;
+}
+
+.container {
+width: 100%;
+max-width: 600px;
+margin: 0 auto;
+}
+
+header {
+text-align: center;
+margin-bottom: 25px;
+position: relative;
+}
+
+.credits {
+display: inline-block;
+background: rgba(255, 101, 132, 0.15);
+color: var(--primary);
+padding: 5px 15px;
+border-radius: 20px;
+font-size: 12px;
+font-weight: 600;
+margin-bottom: 10px;
+}
+
+h1 {
+font-size: 26px;
+color: #d84370;
+margin-bottom: 8px;
+}
+
+p.subtitle {
+font-size: 13px;
+color: var(--text-muted);
+padding: 0 10px;
+}
+
+/* Barra de Busca */
+.search-box {
+background: #fff;
+padding: 12px 15px;
+border-radius: 50px;
+box-shadow: 0 8px 20px rgba(255, 101, 132, 0.15);
+display: flex;
+align-items: center;
+margin-bottom: 20px;
+border: 2px solid #ffccd5;
+}
+
+.search-box input {
+border: none;
+outline: none;
+width: 100%;
+font-size: 15px;
+color: var(--text-main);
+background: transparent;
+margin-left: 10px;
+}
+
+.search-box button {
+background: linear-gradient(135deg, #ff6584 0%, #ff477e 100%);
+color: white;
+border: none;
+padding: 10px 22px;
+border-radius: 30px;
+font-weight: 600;
+cursor: pointer;
+transition: 0.2s;
+box-shadow: 0 4px 12px rgba(255, 71, 126, 0.3);
+}
+
+.search-box button:hover {
+transform: scale(1.02);
+}
+
+/* Status / Loading */
+#status-message {
+text-align: center;
+font-size: 14px;
+color: var(--text-muted);
+margin: 20px 0;
+}
+
+/* Cards de Pedidos */
+.claim-card {
+background: var(--card-bg);
+border-radius: 20px;
+padding: 20px;
+margin-bottom: 15px;
+box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+border: 1px solid #ffe6eb;
+transition: transform 0.2s;
+}
+
+.claim-card:hover {
+transform: translateY(-2px);
+}
+
+.card-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 12px;
+}
+
+.ceg-title {
+font-size: 16px;
+font-weight: 700;
+color: #b33956;
+}
+
+.badge-tipo {
+font-size: 11px;
+padding: 3px 10px;
+border-radius: 10px;
+font-weight: 600;
+background: #e8f4fd;
+color: #1976d2;
+}
+
+.card-body {
+font-size: 13px;
+color: var(--text-main);
+margin-bottom: 12px;
+}
+
+.card-body div {
+margin-bottom: 5px;
+}
+
+.items-highlight {
+font-weight: 600;
+color: #333;
+}
+
+.card-footer {
+display: flex;
+justify-content: space-between;
+align-items: center;
+border-top: 1px solid #f5f5f5;
+padding-top: 12px;
+font-size: 12px;
+}
+
+.tag-status {
+padding: 4px 10px;
+border-radius: 8px;
+font-weight: 600;
+}
+
+.status-pago { background: #e2fdd9; color: #2e7d32; }
+.status-apagar { background: #fff3cd; color: #856404; }
+
+.values {
+font-weight: 700;
+color: #d84370;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<header>
+<div class="credits">🎀 Painel de Uso Pessoal</div>
+<h1>Minhas Claims</h1>
+<p class="subtitle">Consulte seus itens, valores e prazos em um só lugar!</p>
+</header>
+
+<div class="search-box">
+<span>🔍</span>
+<input type="text" id="searchInput" placeholder="Digite '@seuuser' ou deixe em branco para ver tudo" value="">
+<button onclick="carregarClaims()">Buscar</button>
+</div>
+
+<div id="status-message">Carregando suas claims da planilha...</div>
+<div id="results-container"></div>
+</div>
+
+<script>
+// ID extraído automaticamente da sua planilha
+const SHEET_ID = '1tQgHPwS4-JQyR-VHgE7IZbRUXdZQmZGwZWqrz-7jwx4';
+const SHEET_NAME = 'claims';
+
+async function carregarClaims() {
+const container = document.getElementById('results-container');
+const msg = document.getElementById('status-message');
+const busca = document.getElementById('searchInput').value.trim().toLowerCase();
+
+container.innerHTML = '';
+msg.style.display = 'block';
+msg.innerText = 'Buscando suas claims na planilha... 💖';
+
+const url = https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)};
+
+try {
+const response = await fetch(url);
+const text = await response.text();
+const json = JSON.parse(text.substring(47).slice(0, -2));
+
+const rows = json.table.rows;
+let encontrados = 0;
+
+if (rows.length === 0) {
+msg.innerText = 'Sua planilha ainda está vazia!';
+return;
+}
+
+rows.forEach(row => {
+const ceg = row.c[0]?.v || '';
+const tipo = row.c[1]?.v || '';
+const gomComu = row.c[2]?.v || '';
+const itens = row.c[3]?.v || '';
+const integrantes = row.c[4]?.v || '';
+const valorTotal = row.c[5]?.v || '';
+const statusPag = row.c[6]?.v || '';
+const valorRestante = row.c[7]?.v || '';
+const prazo1 = row.c[8]?.v || '';
+const prazo2 = row.c[9]?.v || '';
+const statusGeral = row.c[10]?.v || '';
+
+// Se houver busca, filtra (ou mostra tudo se o campo estiver vazio)
+if (busca && !gomComu.toLowerCase().includes(busca) && !ceg.toLowerCase().includes(busca)) {
+return;
+}
+
+encontrados++;
+
+const statusClass = statusPag.toLowerCase().includes('pago') ? 'status-pago' : 'status-apagar';
+
+const card = document.createElement('div');
+card.className = 'claim-card';
+card.innerHTML = &lt;div class="card-header"&gt; &lt;span class="ceg-title"&gt;${ceg}</span>
+<span class="badge-tipo">${tipo}&lt;/span&gt; &lt;/div&gt; &lt;div class="card-body"&gt; &lt;div&gt;&lt;strong&gt;GOM/Comu:&lt;/strong&gt; ${gomComu}</div>
+<div><strong>Itens:</strong> <span class="items-highlight">${itens}&lt;/span&gt;&lt;/div&gt; &lt;div&gt;&lt;strong&gt;Integrantes:&lt;/strong&gt; ${integrantes}</div>
+<div><strong>Prazos:</strong> 📅 1: ${prazo1} | 2: ${prazo2}</div>
+</div>
+<div class="card-footer">
+<span class="tag-status ${statusClass}"&gt;${statusPag} (Restante: ${valorRestante})&lt;/span&gt; &lt;span class="values"&gt;Total: ${valorTotal}&lt;/span&gt; &lt;/div&gt;;
+container.appendChild(card);
+});
+
+if (encontrados === 0) {
+msg.innerText = 'Nenhuma claim encontrada com esse termo.';
+} else {
+msg.style.display = 'none';
+}
+
+} catch (error) {
+console.error(error);
+msg.innerText = 'Erro ao carregar os dados. Verifique se a planilha está pública como leitor!';
+}
+}
+
+// Carrega automaticamente ao abrir a página
+window.onload = carregarClaims;
+</script>
+</body>
+</html>
